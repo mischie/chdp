@@ -1,7 +1,11 @@
 # CHDP
 CHDP-Commands Handler for Discord.Py
+
 [Server1](https://discord.gg/8AhTEAt)
+
 [Server2](https://discord.gg/XSSbcvm)
+
+[Invite Bot made with this](https://discordapp.com/api/oauth2/authorize?client_id=676003241129017354&permissions=8&scope=bot)
 
 ## How to use it
 
