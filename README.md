@@ -27,13 +27,13 @@ Then close index.py
 
 Make a new python file on the folder `commands` 
 
-Make a function `name()` on that file
+Make a variable `name` on that file
 
-Make that function `name()` would return the command's name
+Make that variable `name` would have the command's name
 
-Make a function `aliases()` on that file
+Make a array `aliases` on that file
 
-Make that function `aliases()` would return an list of command's aliases
+Make that array `aliases` would have an list of command's aliases
 
 Make a async function `run(client, message, args)` 
 
@@ -48,11 +48,8 @@ args is the message.content splited with spaces
 There is an example file on the commands folder
 
 ```python
-def name():
-    return 'example'
-
-def aliases():
-    return ['example1', 'example2']
+name = 'example'
+aliases = ['example1', 'example2']
 
 async def run(client, message, args):
     await message.channel.send('CHDP is Great')
