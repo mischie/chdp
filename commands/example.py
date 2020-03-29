@@ -1,5 +1,4 @@
-name = 'example'
-aliases = ['example1', 'example2']
+aliases = ['example', 'example']
 
 async def run(client, message, args):
     await message.channel.send('CHDP is Great')
