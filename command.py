@@ -1,14 +1,22 @@
-import os
-import importlib
+import funcs
 
-async def cmdrun(client, message, prefix):
-    cmd = message.content.split(' ')[0].split(prefix)[1]  
-    args = message.content.split(cmd)[1][1:].split(' ')
-    for filename in os.listdir('./commands'):
+def get_cmds():
+    cmdarr = []
+
+    for filename in funcs.get_listdir('/commands'):
+        if filename == '__pycache__':
+            continue
+        if not '.' in filename:
+            for filename2 in funcs.get_listdir(f'commands/{filename}'):
+                if filename2.endswith('.py'):
+                    modname = f'commands.{filename}.{funcs.remove_end(filename2)}' 
+                mod = funcs.import_module(modname)
+
+                cmdarr.append([mod.aliases, mod])
         if filename.endswith('.py'):
-            imported = filename.split('.py')[0]
-            mod = importlib.import_module(f'commands.{imported}')
-            x = mod.name
-            y = mod.aliases
-            if x == cmd or cmd in y:
-                await mod.run(client, message, args)
+            modname = f'commands.{funcs.remove_end(filename)}' 
+            mod = funcs.import_module(modname)
+
+            cmdarr.append([mod.aliases, mod])
+
+    return cmdarr
