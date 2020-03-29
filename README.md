@@ -9,7 +9,7 @@ CHDP-Commands Handler for Discord.Py
 
 ## Download It
 
-[Google Drive](https://drive.google.com/file/d/19yZBTg2AwRIz27AhlqrKcP4qqNdexJ-_/view?usp=sharing)
+git clone https://github.com/kiki7000/chdp.git
 
 ## How to use it
 
@@ -26,10 +26,6 @@ Change variable game to your bot's Game
 Then close index.py
 
 Make a new python file on the folder `commands` 
-
-Make a variable `name` on that file
-
-Make that variable `name` would have the command's name
 
 Make a array `aliases` on that file
 
@@ -48,8 +44,7 @@ args is the message.content splited with spaces
 There is an example file on the commands folder
 
 ```python
-name = 'example'
-aliases = ['example1', 'example2']
+aliases = ['example', 'example1']
 
 async def run(client, message, args):
     await message.channel.send('CHDP is Great')
