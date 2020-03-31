@@ -1,4 +1,5 @@
 # CHDP
+![Made by kiki](https://img.shields.io/badge/Made%20By%20KIKI-Good%20Job-brightgreen)
 CHDP-Commands Handler for Discord.Py
 
 [Server1](https://discord.gg/8AhTEAt)
