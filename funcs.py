@@ -1,6 +1,6 @@
 import importlib
 import os
-import commands as cmds
+import command as cmds
 
 def import_module(module):
     return importlib.import_module(str(module))
