@@ -14,7 +14,7 @@ class CHDPClient(discord.AutoShardedClient):
         self.sub_dir = sub_dir
         self.ignore_folder = ignore_folder
         self.games = games
-        self.wait = wait
+        self.wait = wait 
 
         self.cmds = []
 
