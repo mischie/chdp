@@ -1,56 +1,45 @@
 # CHDP
 ![Made by kiki](https://img.shields.io/badge/Made%20By%20KIKI-Good%20Job-brightgreen)
 
-CHDP-Commands Handler for Discord.Py
+CHDP는 Cogs를 반대하고 쉬운 커맨드핸들러를 원하는 유저들을 위한 커맨드핸들러입니다.
 
-[Server1](https://discord.gg/8AhTEAt)
+클래스 싫고 일일이 cog를 추가하는게 귀찮다고요?
 
-[Server2](https://discord.gg/XSSbcvm)
+그렇다면 chdp를 사용해주세요
 
-[Invite Bot made with this](https://discordapp.com/api/oauth2/authorize?client_id=676003241129017354&permissions=8&scope=bot)
+chdp는 자동으로 커맨드를 로드해주고 on_message 이벤트도 있어요
 
-## Download It
+권한설정도 쉽다고요
 
-git clone https://github.com/kiki7000/chdp.git
+버그가 있다고요? Issue에서 건의하세요
 
-## How to use it
+키키는 항상 고칠 준비가 되어있답니다.
 
-Don't touch the `command.py`
+## CHDP 사용 방법
 
-Open the `index.py`
+아래 단계대로 하시면 완료입니다!
 
-Change variable prefix to your bot's prefix
+### 1. 레퍼스토리지 보고 구조 공부하기!
 
-Change variable token to your bot's token
+### 2. client.py 다운로드하기
 
-Change variable game to your bot's Game
+### 3. client를 임포트하기 (import client)
 
-Then close index.py
+### 4. client를 client.CHDPClient(prefix = '접두사', games = 봇 게임 리스트, command_dir = '커맨드파일 폴더')로 정의해주시고 on_message 함수 마지막에 client.use_cmd(message)를 작성해주세요
 
-Make a new python file on the folder `commands` 
-
-Make a array `aliases` on that file
-
-Make that array `aliases` would have an list of command's aliases
-
-Make a async function `run(client, message, args)` 
-
-Make that function`run(client, message, args)` would do what the command must do
-
-client is the client
-
-message is the message 
-
-args is the message.content splited with spaces
-
-There is an example file on the commands folder
+### 5. 커맨드파일 폴더에 파일 추가후(커맨드파일 폴더 안에 폴더 추가하고 파일 추가 가능(서버 디랙토리 설정으로 비활성화 가능)) 파일에 아래 코드를 작성해주세요
 
 ```python
-aliases = ['example', 'example1']
+name = '커맨드 이름'
+aliases = '커맨드 부명령어'
+user_per = '유저가 필요한 권한'
+bot_per = '봇이 필요한 권한'
 
 async def run(client, message, args):
-    await message.channel.send('CHDP is Great')
+
 ```
 
-Thanks for using it^^
+### 6. run 함수에 코드를 입력해주면 끝이랍니다 ~(엄청 간단하죠 ^^)~
+
+### client 클래스에는 prefix(접두사), cmds(명령어들, 도움말 만들때 편리) 등이 있습니다
 
