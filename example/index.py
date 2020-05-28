@@ -1,6 +1,6 @@
 import client as chdpclient
 
-client = chdpclient.CHDPClient(prefix = '!', games = ['키키천재임', '전에메시지거짓임', '나말고 다 거짓임', '응?!'], command_dir = 'commands')
+client = chdpclient.CHDPClient(prefix = '!')
 
 @client.event
 async def on_message(message):
