@@ -5,6 +5,18 @@ import asyncio
 import inspect
 import time
 
+def get_varnames(func):
+    return list(func.__code__.co_varnames)
+
+async def use_func(func, *args):
+    if check_async(func):
+        await func(*args)
+    else:
+        func(*args)
+
+def check_async(o):
+    return inspect.iscoroutinefunction(o)
+
 class CHDPClient(discord.AutoShardedClient):
     def __init__(self, prefix = None, spaceinprefix = False, command_dir = 'commands', sub_dir = True, ignore_folder = ['__pycache__', 'ignore'], logging = False):
         super().__init__()
@@ -73,41 +85,49 @@ class CHDPClient(discord.AutoShardedClient):
 
         self.log(f'{message.author.name}: Index - {index}\tArgs - {args}')
 
+        async def error(c, code, msg):
+            if 'error' in dir(c):
+                await use_func(c.error, self, message, code, msg)
+
+        async def run(c):
+            dirs = dir(c)
+            if 'before_run' in dirs:
+                await use_func(c.beforerun)
+            if 'use_per' in dirs:
+                r = self.check_permissions(message.author, c.user_per)
+                if not r: 
+                    await error(c, code = 1, msg = 'Permission Required')
+                    return
+            if 'bot_per' in dirs:
+                r = self.check_permissions(message.guild.me, c.user_per)
+                if not r: 
+                    await error(c, code = 2, msg = 'User Permission Required')
+                    return 
+            if 'cooltime' in dirs:
+                tm = self.time()
+                tmlst = self.get_item_lst(self.cooltimelst, 'name')
+                v = self.get_item_lst(tmlst, str(message.author.id))
+                if not (tm - v > int(c.cooltime)):
+                    await error(c, code = 3, msg = 'Cooltime Not Passed')
+                    return
+            await use_func(c.run, self, message, args)
+            if 'after_run' in dirs:
+                await use_func(c.afterrun)
+
         for m in self.cmds:
             c = m
             if 'Command' in dir(c):
                 c = c.Command()
                 dirs = dir(c)
             if not 'name' in dirs and not index:
-                await run()
+                await run(c)
                 return
             if not 'aliases' in dirs and index == c.name: 
-                await run()
+                await run(c)
                 return
             if index in c.aliases or index == c.name:
-                await run()
+                await run(c)
                 return
-        
-        async def run():
-            if 'before_run' in dirs:
-                await use_func(c.beforerun)
-            if 'use_per' in dirs:
-                self.check_permissions(message.author, c.user_per)
-            if 'bot_per' in dirs:
-                self.check_permissions(message.guild.me, c.user_per)
-            if 'cooltime' in dirs:
-                tm = self.time()
-                tmlst = self.get_item_lst(self.cooltimelst, 'name')
-                v = self.get_item_lst(tmlst, str(message.author.id))
-                if not (tm - v > int(c.cooltime)):
-                    await error('Cooltime Not Passed')
-            await use_func(c.run, self, message, args)
-            if 'after_run' in dirs:
-                await use_func(c.afterrun)
-        
-        async def error(er):
-            if 'error' in dirs:
-                await use_func(c.error, er)
     
     def log(self, msg):
         if self.logging:
@@ -206,6 +226,56 @@ class CHDPClient(discord.AutoShardedClient):
         
         else: return False
     
+    async def get_reaction(self, msg, message, emojilist = ['⭕', '❌'], timeout = 60, cls_reaction = False):
+        def check(reaction, user):
+            return user == msg.author and str(reaction) in emojilist
+
+        for e in emojilist:
+            await message.add_reaction(str(e))
+
+        try:
+            reaction = await self.wait_for('reaction_add', timeout = timeout, check = check)
+        except asyncio.TimeoutError:
+            await asyncio.gather(message.delete(), message.channel.send(embed = discord.Embed(title = '시간이 종료되었습니다', description = f'{timeout}초가 지나서 자동으로 반응 콜랙터가 종료되었습니다', color = self.color.red)))
+            return None
+        else:
+            if cls_reaction and message.guild.me.guild_permissions.manage_messages:
+                await message.clear_reactions()
+            return str(reaction[0].emoji)
+    
+    async def get_message(self, message, timeout = 60):
+        def check(msg):
+            return msg.channel == message.channel and msg.author == message.author
+        
+        try:
+            m = await self.wait_for('message', timeout = timeout, check = check)
+        except asyncio.TimeoutError:
+            await message.channel.send(embed = discord.Embed(title = '시간이 종료되었습니다', description = f'{timeout}초가 지나서 자동으로 메시지 콜랙터가 종료되었습니다', color = self.color.red))
+            return None
+        else:
+            return m
+    
+    def get_user_msg(self, message, index = 0):
+        member = message.mentions
+        try:
+            if member[0]:
+                return member[0]
+        except Exception:
+            pass
+        try:
+            userid = str(message.content).split(' ')[1 + index]
+        except Exception:
+            return message.author
+        if userid == '봇':
+            return message.guild.me
+        try:
+            user = message.guild.get_member(int(userid))
+        except ValueError:
+            return message.author
+        if user:
+            return user
+        return message.author
+    
     def get_item_lst(self, lst, k):
         try:
             return lst[str(k)]
@@ -217,14 +287,3 @@ class CHDPClient(discord.AutoShardedClient):
     
     def time(self):
         return round(time.time())
-def get_varnames(func):
-    return list(func.__code__.co_varnames)
-
-async def use_func(func, *args):
-    if check_async(func, *args):
-        await func(*args)
-    else:
-        func(*args)
-
-def check_async(o):
-    return inspect.iscoroutinefunction(o)
