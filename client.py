@@ -81,7 +81,8 @@ class CHDPClient(discord.AutoShardedClient):
         if self.spaceinprefix:
             ix = 1
         index = message.content.split(self.prefix)[1].split(' ')[ix]
-        args = message.content.split(index)[1][1:].split(' ')
+        try: args = message.content.split(index)[1][1:].split(' ')
+        except: args = []
 
         self.log(f'{message.author.name}: Index - {index}\tArgs - {args}')
 
@@ -93,48 +94,39 @@ class CHDPClient(discord.AutoShardedClient):
             dirs = dir(c)
             if 'before_run' in dirs:
                 await use_func(c.beforerun)
-            if 'use_per' in dirs:
+            if 'user_per' in dirs:
                 r = self.check_permissions(message.author, c.user_per)
                 if not r: 
-                    await error(c, code = 1, msg = 'Permission Required')
+                    await error(c, code = 1, msg = 'User Permission Required')
                     return
             if 'bot_per' in dirs:
                 r = self.check_permissions(message.guild.me, c.user_per)
                 if not r: 
-                    await error(c, code = 2, msg = 'User Permission Required')
+                    await error(c, code = 2, msg = 'Bot Permission Required')
                     return 
-            if 'cooltime' in dirs:
-                tm = self.time()
-                tmlst = self.get_item_lst(self.cooltimelst, 'name')
-                v = self.get_item_lst(tmlst, str(message.author.id))
-                if not (tm - v > int(c.cooltime)):
-                    await error(c, code = 3, msg = 'Cooltime Not Passed')
-                    return
             await use_func(c.run, self, message, args)
             if 'after_run' in dirs:
                 await use_func(c.afterrun)
 
         for m in self.cmds:
-            c = m
-            if 'Command' in dir(c):
-                c = c.Command()
-                dirs = dir(c)
-            if not 'name' in dirs and not index:
-                await run(c)
-                return
-            if not 'aliases' in dirs and index == c.name: 
-                await run(c)
-                return
-            if index in c.aliases or index == c.name:
-                await run(c)
-                return
+            if 'Command' not in dir(c): return False
+            c = m.Command()
+            dirs = dir(c)
+            if 'name' in dirs and 'aliases' not in dirs:
+                if index == c.name: 
+                    await run(c)
+                    return True
+            elif 'aliases' in dirs and 'name' in dirs: 
+                if index in c.aliases or index == c.name: 
+                    await run(c)
+                    return True
+            else: return False
     
     def log(self, msg):
         if self.logging:
             print(msg)
     
     def check_permissions(self, author, ps):
-        c = []
         for p in ps:
             if not self.check_permission(author, p): return False
         return True
@@ -142,18 +134,18 @@ class CHDPClient(discord.AutoShardedClient):
     def check_permission(self, author, p):
         memper = author.guild_permissions
         p = p.replace(' ', '_').lower()
-
-        if memper.administrator:
-            return True
-
+        
         if p == '':
             return True
 
-        elif p == 'guildowner':
+        if p == 'guildowner':
             if author.guild.owner == author:
                 return True
             else:
                 return False
+
+        elif memper.administrator:
+            return True
         
         elif p == 'create_instance_invite' and memper.create_instance_invite:
             return True
@@ -236,7 +228,7 @@ class CHDPClient(discord.AutoShardedClient):
         try:
             reaction = await self.wait_for('reaction_add', timeout = timeout, check = check)
         except asyncio.TimeoutError:
-            await asyncio.gather(message.delete(), message.channel.send(embed = discord.Embed(title = '시간이 종료되었습니다', description = f'{timeout}초가 지나서 자동으로 반응 콜랙터가 종료되었습니다', color = self.color.red)))
+            await asyncio.gather(message.delete(), message.channel.send(embed = discord.Embed(title = '시간이 종료되었습니다', description = f'{timeout}초가 지나서 자동으로 반응 콜랙터가 종료되었습니다', color = discord.Color.red)))
             return None
         else:
             if cls_reaction and message.guild.me.guild_permissions.manage_messages:
@@ -250,7 +242,7 @@ class CHDPClient(discord.AutoShardedClient):
         try:
             m = await self.wait_for('message', timeout = timeout, check = check)
         except asyncio.TimeoutError:
-            await message.channel.send(embed = discord.Embed(title = '시간이 종료되었습니다', description = f'{timeout}초가 지나서 자동으로 메시지 콜랙터가 종료되었습니다', color = self.color.red))
+            await message.channel.send(embed = discord.Embed(title = '시간이 종료되었습니다', description = f'{timeout}초가 지나서 자동으로 메시지 콜랙터가 종료되었습니다', color = discord.Color.red))
             return None
         else:
             return m
@@ -287,3 +279,48 @@ class CHDPClient(discord.AutoShardedClient):
     
     def time(self):
         return round(time.time())
+    
+    def get_datetime(self, datetime):
+        week = {0: '월', 1: '화', 2: '수', 3: '목', 4: '금', 5: '토', 6: '일'}
+        if datetime.hour > 12:
+            hour = datetime.hour - 12
+            when = '오후'
+        else:
+            hour = datetime.hour
+            when = '오전'
+        date = f'{datetime.year}년 {datetime.month}월 {datetime.day}일 {when} {hour}시 {datetime.minute}분 {datetime.second}초 {week[datetime.weekday()]}요일'
+        return date
+    
+    def get_channel_msg(self, message, index = 0):
+        channels = message.channel_mentions
+        try:
+            if channels[0]:
+                return channels[0]
+        except Exception:
+            pass
+        try:
+            chanid = str(message.content).split(' ')[1 + index]
+        except Exception:
+            return message.channel
+        try:
+            chan = message.guild.get_channel(int(chanid))
+        except ValueError:
+            return message.channel
+        if chan:
+            return chan
+        return message.channel
+    
+    def get_role_msg(self, message, index = 0):
+        role = message.role_mentions
+        try:
+            if role[0]:
+                return role[0]
+        except Exception:
+            pass
+        try:
+            rl = message.guild.get_role(int(str(message.content).split(' ')[1 + index]))
+        except Exception:
+            return None
+        if rl:
+            return rl
+        return None
