@@ -109,7 +109,7 @@ class CHDPClient(discord.AutoShardedClient):
                 await use_func(c.afterrun)
 
         for m in self.cmds:
-            if 'Command' not in dir(c): return False
+            if 'Command' not in dir(): return False
             c = m.Command()
             dirs = dir(c)
             if 'name' in dirs and 'aliases' not in dirs:
