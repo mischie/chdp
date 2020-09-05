@@ -120,6 +120,7 @@ class CHDPClient(AutoShardedClient):
         if not message.content.startswith(self.prefix): return
         if message.author.bot: return
         if message.author.id in self.blacklist: return
+        if str(message.channel.type) != 'text': return
 
         index = message.content.split(self.prefix)[1].split(' ')[0]
         try: args = message.content.split(index)[1][self.ix:].split(' ')[1:]
@@ -134,13 +135,13 @@ class CHDPClient(AutoShardedClient):
                 if not res: return 
             if 'user_per' in dirs:
                 r = self.check_permissions(message.author, c.user_per)
-                if len(r) != 1:
-                    if 'user_no_permission' in dirs: return await use_func(c.user_no_permission, self, message, ext, r[1]) 
+                if r:
+                    if 'user_no_permission' in dirs: return await use_func(c.user_no_permission, self, message, ext, r) 
                     else: return
             if 'bot_per' in dirs:
                 r = self.check_permissions(message.guild.me, c.bot_per)
-                if len(r) != 1:
-                    if 'bot_no_permission' in dirs: return await use_func(c.bot_no_permission, self, message, ext, r[1]) 
+                if r:
+                    if 'bot_no_permission' in dirs: return await use_func(c.bot_no_permission, self, message, ext, r) 
                     else: return
             if 'cooltime' not in dirs: await use_func(c.run, self, message, ext)
             else:
@@ -170,8 +171,8 @@ class CHDPClient(AutoShardedClient):
 
     def check_permissions(self, author: Member, ps: list) -> bool:
         fail = list(filter(lambda x: not self.check_permission(author, x), ps))
-        if not fail: return [True]
-        else: return [False, list(fail)]
+        if not fail: return None
+        else: return list(fail)
 
     def check_permission(self, author: Member, p: str) -> bool:
         memper = author.guild_permissions
