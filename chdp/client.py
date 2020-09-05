@@ -29,7 +29,15 @@ from .errors import (
 
 from .handler import Handler
 
-class Extension: pass
+class Extension: 
+    def __init__(self, index: str, args: list, first_member: Member, first_channel: TextChannel, first_role: Role):
+        self.index = str(index)
+        self.args = list(args)
+        self.first_member = first_member
+        self.first_channel = first_channel
+        self.first_role = first_role
+
+    def __setattr__(self, item: str, value): self.item = value
 
 class CHDPClient(AutoShardedClient):
     def __init__(self, config_file = 'config.json'):
@@ -102,7 +110,7 @@ class CHDPClient(AutoShardedClient):
     @property
     def uptime(self) -> float: return get_time() - self.starttime
 
-    async def change_presence_loop(self, games, wait = 5, status = Status.online, activity = Game, *args, **kwargs):
+    async def change_presence_loop(self, games: list, wait: int = 5, status = Status.online, activity = Game, *args, **kwargs):
         await self.wait_until_ready()
 
         while not self.is_closed():
@@ -110,7 +118,7 @@ class CHDPClient(AutoShardedClient):
                 await self.change_presence(status = status, activity = activity(str(game).replace('[u]', str(len(super().users))).replace('[g]', str(len(super().guilds))).replace('[p]', self.prefix), *args, **kwargs))
                 await async_sleep(int(wait))
     
-    async def use_cmd(self, message) -> bool:
+    async def use_cmd(self, message: Message) -> bool:
         if not message.content.startswith(self.prefix): return
         if message.author.bot: return
         if message.author.id in self.blacklist: return
@@ -120,14 +128,9 @@ class CHDPClient(AutoShardedClient):
         except: args = []
 
         async def run(c):
-            ext = Extension()
-            setattr(ext, 'index', str(index))
-            setattr(ext, 'args', list(args))
-            setattr(ext, 'first_member', self.get_user_msg(message, ext))
-            setattr(ext, 'first_channel', self.get_channel_msg(message, ext))
-            setattr(ext, 'first_role', self.get_role_msg(message, ext))
-
+            ext = Extension(index, args, self.get_user_msg(message, args), self.get_channel_msg(message, args), self.get_role_msg(message, args))
             dirs = dir_object(c)
+
             if 'check' in dirs: 
                 res = await use_func(c.check, self, message, ext)
                 if not res: return 
@@ -167,12 +170,12 @@ class CHDPClient(AutoShardedClient):
     
     # permission check
 
-    def check_permissions(self, author, ps) -> bool:
+    def check_permissions(self, author: Member, ps: list) -> bool:
         fail = list(filter(lambda x: not self.check_permission(author, x), ps))
         if not fail: return [True]
         else: return [False, list(fail)]
 
-    def check_permission(self, author, p) -> bool:
+    def check_permission(self, author: Member, p: str) -> bool:
         memper = author.guild_permissions
         p = str(p).replace(' ', '_').replace(' ', '').lower()
         if not p: return True
@@ -206,7 +209,7 @@ class CHDPClient(AutoShardedClient):
     
     # get things
 
-    async def get_reaction(self, msg, message, emojilist = ['⭕', '❌'], timeout = 60, cls_reaction = False, embed = Embed(title = '시간이 종료되었습니다', description = f'정해진 시간이 끝나서 자동으로 반응 콜랙터가 종료되었습니다', color = Color.red())) -> Reaction:
+    async def get_reaction(self, msg: Message, message: Message, emojilist: list = ['⭕', '❌'], timeout: int = 60, cls_reaction: bool = False, embed: Embed = Embed(title = '시간이 종료되었습니다', description = f'정해진 시간이 끝나서 자동으로 반응 콜랙터가 종료되었습니다', color = Color.red())) -> Reaction:
         for e in emojilist: await message.add_reaction(str(e))
         try: reaction = list(await self.wait_for('reaction_add', timeout = timeout, check = lambda r, u: r.message.id == message.id and u == msg.author and str(r.emoji) in emojilist))[0]
         except AsyncTimeoutError:
@@ -217,7 +220,7 @@ class CHDPClient(AutoShardedClient):
             except: pass
             return reaction
     
-    async def get_message(self, message, timeout = 60, embed = Embed(title = '시간이 종료되었습니다', description = f'정해진 시간이 끝나서 자동으로 메시지 콜랙터가 종료되었습니다', color = Color.red())) -> Message:
+    async def get_message(self, message: Message, timeout: int = 60, embed: Embed = Embed(title = '시간이 종료되었습니다', description = f'정해진 시간이 끝나서 자동으로 메시지 콜랙터가 종료되었습니다', color = Color.red())) -> Message:
         try: m = await self.wait_for('message', timeout = timeout, check = lambda m: m.channel == message.channel and m.author == message.author)
         except AsyncTimeoutError:
             await message.channel.send(embed = embed)
@@ -226,12 +229,12 @@ class CHDPClient(AutoShardedClient):
     
     # get from message
 
-    def get_user_msg(self, message, ext, index = 0) -> Member:
+    def get_user_msg(self, message: Message, args: list, index: int = 0) -> Member:
         member = message.mentions
         try:
             if member[0]: return member[0]
         except: pass
-        try: userid = ext.args[int(index)]
+        try: userid = args[int(index)]
         except: return None
         if userid == '봇': return message.guild.me
         try: user = list(filter(lambda m: m.display_name == userid or m.name == userid, message.guild.members))[0]
@@ -242,12 +245,12 @@ class CHDPClient(AutoShardedClient):
         if user: return user
         return None
     
-    def get_channel_msg(self, message, ext, index = 0) -> TextChannel:
+    def get_channel_msg(self, message: Message, args: list, index: int = 0) -> TextChannel:
         channels = message.channel_mentions
         try:
             if channels[0]: return channels[0]
         except: pass
-        try: chanid = ext.args[int(index)]
+        try: chanid = args[int(index)]
         except: return None
         if chanid == '여기': return message.channel
         try: chan = list(filter(lambda m: m.name == chanid, message.guild.channels))[0]
@@ -258,12 +261,12 @@ class CHDPClient(AutoShardedClient):
         if chan: return chan
         return None
     
-    def get_role_msg(self, message, ext, index = 0) -> Role:
+    def get_role_msg(self, message: Message, args: list, index: int = 0) -> Role:
         role = message.role_mentions
         try:
             if role[0]: return role[0]
         except: pass
-        try: roleid = ext.args[int(index)]
+        try: roleid = args[int(index)]
         except: return None
         try: role = list(filter(lambda m: m.name == roleid, message.author.roles))[0]
         except: pass
@@ -273,20 +276,20 @@ class CHDPClient(AutoShardedClient):
         if role: return role
         return None
     
-    def get_int_msg(self, message, ext) -> int:
-        if not ext.args[0]: return None
-        try: a = int(ext.args[0])
+    def get_int_msg(self, message: Message, args: list) -> int:
+        if not args[0]: return None
+        try: a = int(args[0])
         except ValueError: return None
         return a
 
-    def get_code_msg(self, message, lang = 'py') -> str:
+    def get_code_msg(self, message: Message, lang: str = 'py') -> str:
         try: code = message.content.split(f'```{lang}')[1].split('```')[0]
         except IndexError: return None
         return str(code)
     
     # settings
     
-    def append_botdev(self, id) -> bool:
+    def append_botdev(self, id: int) -> bool:
         id = int(id)
         if id in self.config_data['botdev']: return False
         self.config_data['botdev'].append(id)
@@ -294,7 +297,7 @@ class CHDPClient(AutoShardedClient):
         save_json(self.config_file, self.config_data)
         return True
     
-    def remove_botdev(self, id) -> bool:
+    def remove_botdev(self, id: int) -> bool:
         id = int(id)
         if id in self.config_data['botdev']: return False
         self.config_data['botdev'].remove(id)
@@ -302,7 +305,7 @@ class CHDPClient(AutoShardedClient):
         save_json(self.config_file, self.config_data)
         return True
     
-    def append_black(self, id) -> bool:
+    def append_black(self, id: int) -> bool:
         id = int(id)
         if id in self.config_data['black']: return False
         self.config_data['black'].append(id)
@@ -310,7 +313,7 @@ class CHDPClient(AutoShardedClient):
         save_json(self.config_file, self.config_data)
         return True
     
-    def remove_black(self, id) -> bool:
+    def remove_black(self, id: int) -> bool:
         id = int(id)
         if id in self.config_data['black']: return False
         self.config_data['black'].remove(id)
