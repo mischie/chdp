@@ -37,8 +37,6 @@ class Extension:
         self.first_channel = first_channel
         self.first_role = first_role
 
-    def __setattr__(self, item: str, value): self.item = value
-
 class CHDPClient(AutoShardedClient):
     def __init__(self, config_file = 'config.json'):
         super().__init__()

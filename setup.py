@@ -2,7 +2,7 @@ import setuptools
 
 setuptools.setup(
     name = 'chdp',
-    version = '4.0.8',
+    version = '4.0.9',
     description = 'Command Handler for Discord.Py',
     author = 'kiki7000',
     author_email = 'devkiki7000@gmail.com',
