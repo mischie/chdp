@@ -22,7 +22,7 @@ $ pip install chdp
 
 3. create a file in folder **commands** and fill it like below
 ```python
-class Commnad:
+class Command:
     name = 'ping'
     async def run(self, client, message, ext): await message.channel.send('pong')
 ```
